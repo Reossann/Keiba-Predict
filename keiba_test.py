@@ -24,20 +24,21 @@ response.encoding = 'EUC-JP'
 
 # HTMLを解析
 # !レース情報がほとんど乗っているやつを作成
-# columns = ["着順","枠番","馬番","馬名","年齢","斤量","騎手","タイム","着差","タイム指数","通過","上り","単勝","人気","馬体重","調教タイム","厩舎コメント","備考","調教師","馬主","賞金"]
-# race_data_dict_list = []
-# soup = BeautifulSoup(response.text, 'html.parser')
-# all_data = soup.find("table",class_="race_table_01 nk_tb_common")
-# for i in all_data.find_all("tr"):
-#     horse_data = []
-#     for cell in i.find_all("td"):
-#         horse_data.append(cell.text.strip())
-#     if horse_data:
-#         horse_dict = dict(zip(columns,horse_data))
-#         race_data_dict_list.append(horse_dict)
+columns = ["着順","枠番","馬番","馬名","年齢","斤量","騎手","タイム","着差","タイム指数","通過","上り","単勝","人気","馬体重","調教タイム","厩舎コメント","備考","調教師","馬主","賞金"]
+race_data_dict_list = []
+soup = BeautifulSoup(response.text, 'html.parser')
+all_data = soup.find("table",class_="race_table_01 nk_tb_common")
+for i in all_data.find_all("tr"):
+    horse_data = []
+    for cell in i.find_all("td"):
+        horse_data.append(cell.text.strip())
+    if horse_data:
+        horse_dict = dict(zip(columns,horse_data))
+        race_data_dict_list.append(horse_dict)
 
-# df = pd.DataFrame(race_data_dict_list)
-# print(df)
+df = pd.DataFrame(race_data_dict_list)
+print(df)
+#!今週の騎手全てのデータを取得
 page_jockeysURL = "https://race.netkeiba.com/race/search.html?kaisai_date=20250726&current_group=1020250726&mode=jockey"
 jockey_url_list = []
 
