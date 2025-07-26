@@ -1,0 +1,59 @@
+import joblib
+import pandas as pd
+import requests
+from selenium import webdriver
+from bs4 import BeautifulSoup
+import time
+import re
+
+# 1. 保存したエンコーダとモデルを読み込む
+encoders = joblib.load('encoders.joblib')
+model = joblib.load('lgbm_model.joblib')
+
+URL = input("予想したいレースのURLを入力してください:")
+
+# 2. 新しいレースデータを取得
+driver = webdriver.Chrome() 
+driver.get(URL)
+print("ページを読み込んでいます...5秒待機します")
+time.sleep(5)
+html = driver.page_source
+driver.quit()
+columns = ["着順","枠番","馬番","馬名","年齢","斤量","騎手","タイム","着差","人気","単勝オッズ","後3F","コーナー通過順","厩舎","馬体重（増減）"]
+race_data_dict_list = []
+soup = BeautifulSoup(html, 'html.parser')
+all_data = soup.find("table",class_="Shutuba_Table RaceTable01 ShutubaTable tablesorter tablesorter-default")
+for i in all_data.find_all("tr"):
+    horse_data = []
+    for cell in i.find_all("td"):
+        horse_data.append(cell.text.strip())
+    if horse_data:
+        horse_dict = dict(zip(columns,horse_data))
+        race_data_dict_list.append(horse_dict)
+new_df = pd.DataFrame(race_data_dict_list)
+
+
+# 3. 保存したエンコーダを使って、新しいデータを変換
+for col, encoder in encoders.items():
+    # .transform()だけを使うのがポイント
+    known_labels = list(encoder.classes_)
+    new_df[col + '_enc'] = new_df[col].apply(lambda x: encoder.transform([x])[0] if x in known_labels else -1)
+
+# 4. モデルで予測
+feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc"]
+X_pred = new_df[feature_columns]
+pred_proba = model.predict_proba(X_pred)[:, 1]
+# 3. 予測結果を元のDataFrameに追加
+new_df['予測確率'] = pred_proba
+
+# 4. 必要な列だけを選び、確率が高い順に並び替える
+result_df = new_df[['馬名', '騎手', '予測確率']]
+sorted_result = result_df.sort_values(by='予測確率', ascending=False)
+sorted_result.index = sorted_result.index + 1
+
+# 5. 最終的な予想結果を表示
+print("--- AIによる競馬予想結果 ---")
+print(sorted_result)
+
+
+
