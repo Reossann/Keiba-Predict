@@ -22,6 +22,18 @@ driver.quit()
 columns = ["着順","枠番","馬番","馬名","年齢","斤量","騎手","タイム","着差","人気","単勝オッズ","後3F","コーナー通過順","厩舎","馬体重（増減）"]
 race_data_dict_list = []
 soup = BeautifulSoup(html, 'html.parser')
+race_info_text = soup.find("div",class_='RaceData01').text
+#距離
+distance_match = re.search(r'(\d+)m', race_info_text)
+distance = int(distance_match.group(1)) if distance_match else None
+#種類
+course_type = '芝' if '芝' in race_info_text else 'ダート'
+# 天候を抽出
+weather_match = re.search(r"天候\s*:\s*(\S+)", race_info_text)
+weather = weather_match.group(1) if weather_match else None
+# 馬場状態を抽出
+track_match = re.search(r"馬場\s*:\s*(\S+)", race_info_text)
+track_condition = track_match.group(1) if track_match else None
 all_data = soup.find("table",class_="Shutuba_Table RaceTable01 ShutubaTable tablesorter tablesorter-default")
 for i in all_data.find_all("tr"):
     horse_data = []
@@ -31,6 +43,10 @@ for i in all_data.find_all("tr"):
         horse_dict = dict(zip(columns,horse_data))
         race_data_dict_list.append(horse_dict)
 new_df = pd.DataFrame(race_data_dict_list)
+new_df['距離'] = distance
+new_df['種類'] = course_type
+new_df["天候"] = weather
+new_df["馬場"] = track_condition
 
 
 # 3. 保存したエンコーダを使って、新しいデータを変換
@@ -40,7 +56,7 @@ for col, encoder in encoders.items():
     new_df[col + '_enc'] = new_df[col].apply(lambda x: encoder.transform([x])[0] if x in known_labels else -1)
 
 # 4. モデルで予測
-feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc"]
+feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc","天候_enc","距離_enc","馬場_enc","種類_enc"]
 X_pred = new_df[feature_columns]
 pred_proba = model.predict_proba(X_pred)[:, 1]
 # 3. 予測結果を元のDataFrameに追加

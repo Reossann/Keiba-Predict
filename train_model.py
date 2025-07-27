@@ -6,14 +6,20 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 import matplotlib.pyplot as plt
 import japanize_matplotlib # 日本語表示のためのライブラリ
 import joblib
+import glob
 
 # 1. 保存したデータベースを読み込む
 # この一行で、これまでの苦労の成果を瞬時に呼び出せる
-df = pd.read_csv('Race_database_2025_6.csv') 
+path = 'Datacsv/*.csv'
+file_list = glob.glob(path)
+df_list = []
+for file in file_list:
+    df_list.append(pd.read_csv(file))
+df = pd.concat(df_list, ignore_index=True)
 encoders={}
 # 2. エンコーディング処理を行う
 # (ここに前回のヒントであるLabelEncoderのコードが入る)
-categorical_cols = ['騎手', '馬名', '厩舎',"年齢","斤量","馬体重（増減）"]
+categorical_cols = ['騎手', '馬名', '厩舎',"年齢","斤量","馬体重（増減）","天候","距離","馬場","種類"]
 for col in categorical_cols:
     le = LabelEncoder()
     df[col + "_enc"] = le.fit_transform(df[col])
@@ -23,7 +29,8 @@ joblib.dump(encoders, 'encoders.joblib')
 # 3. この後のモデル学習なども、このdfを使って進めていく
 
 # 1. 特徴量（X）と目的変数（y）を定義
-feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc"] # 予測に使いたい列を全て選ぶ
+
+feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc","天候_enc","距離_enc","馬場_enc","種類_enc"] # 予測に使いたい列を全て選ぶ
 X = df[feature_columns]
 y = df['is_top3']
 
