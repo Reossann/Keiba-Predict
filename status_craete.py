@@ -13,7 +13,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 
-page_jockeysURL = "https://race.netkeiba.com/top/race_list.html?kaisai_date=20250622"
+page_jockeysURL = "https://race.netkeiba.com/top/race_list.html?kaisai_date=20250628"
 Race_url_list = []
 
 driver = webdriver.Chrome()
@@ -75,7 +75,7 @@ for URL in Race_url_list:
 
 
 master_df = pd.concat(all_jockey_df_list)
-master_df.to_csv('Datacsv/Race_database_2025_6_22.csv', index=False, encoding='utf-8-sig')
+master_df.to_csv('Datacsv/Race_database_2025_6_28.csv', index=False, encoding='utf-8-sig')
 print("全騎手のデータベースが完成しました！")
 print(master_df)
 
