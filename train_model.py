@@ -10,27 +10,47 @@ import glob
 
 # 1. 保存したデータベースを読み込む
 # この一行で、これまでの苦労の成果を瞬時に呼び出せる
-path = 'Datacsv/*.csv'
-file_list = glob.glob(path)
+path_dir = 'Datacsv'
+# 1. CSVファイルのパスリストを取得
+csv_files = glob.glob(f'{path_dir}/*.csv')
+
+# 2. Parquetファイルのパスリストを取得
+parquet_files = glob.glob(f'{path_dir}/*.parquet')
+
+# 3. 2つのリストを結合
+all_files = csv_files + parquet_files
+
+print("見つかった全ファイル:", all_files)
 df_list = []
-for file in file_list:
-    df_list.append(pd.read_csv(file))
+for file in all_files:
+    if file.endswith('.csv'):
+        df_list.append(pd.read_csv(file))
+    elif file.endswith('.parquet'):
+        df_list.append(pd.read_parquet(file))
 df = pd.concat(df_list, ignore_index=True)
 encoders={}
 # 2. エンコーディング処理を行う
 # (ここに前回のヒントであるLabelEncoderのコードが入る)
-categorical_cols = ['騎手', '馬名', '厩舎',"年齢","斤量","馬体重（増減）","天候","距離","馬場","種類"]
+# 1. カテゴリとしてエンコードしたい列
+categorical_cols = ['騎手', '馬名', '厩舎', '年齢', '天候', '馬場', '種類']
 for col in categorical_cols:
     le = LabelEncoder()
+    # NaNを'unknown'などの文字列で埋めてからエンコードすると、より安定します
+    df[col] = df[col].fillna('unknown')
     df[col + "_enc"] = le.fit_transform(df[col])
     encoders[col] = le
-joblib.dump(encoders, 'encoders.joblib')
 
-# 3. この後のモデル学習なども、このdfを使って進めていく
+# 2. 数値として扱いたい列
+#    (馬体重から増減を抜き出すなど、より高度な処理も可能)
+numeric_cols = ['斤量', '距離']
+for col in numeric_cols:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# 1. 特徴量（X）と目的変数（y）を定義
+# NaNの処理（ここでは平均値で埋めてみる例）
+df = df.fillna(df.mean(numeric_only=True))
 
-feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc","天候_enc","距離_enc","馬場_enc","種類_enc"] # 予測に使いたい列を全て選ぶ
+# 3. 最終的に学習に使う特徴量の列を定義
+feature_columns = [col + "_enc" for col in categorical_cols] + numeric_cols
 X = df[feature_columns]
 y = df['is_top3']
 

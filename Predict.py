@@ -49,14 +49,27 @@ new_df["天候"] = weather
 new_df["馬場"] = track_condition
 
 
-# 3. 保存したエンコーダを使って、新しいデータを変換
-for col, encoder in encoders.items():
-    # .transform()だけを使うのがポイント
-    known_labels = list(encoder.classes_)
-    new_df[col + '_enc'] = new_df[col].apply(lambda x: encoder.transform([x])[0] if x in known_labels else -1)
+# 1. 学習時と「同じ」カテゴリ列と数値列を定義
+categorical_cols = ['騎手', '馬名', '厩舎', '年齢', '天候', '馬場', '種類']
+numeric_cols = ['斤量', '距離']
 
-# 4. モデルで予測
-feature_columns = ['騎手_enc', '馬名_enc', '厩舎_enc', "年齢_enc","斤量_enc","馬体重（増減）_enc","天候_enc","距離_enc","馬場_enc","種類_enc"]
+# 2. カテゴリ列を、保存したエンコーダで変換
+for col in categorical_cols:
+    encoder = encoders.get(col) # 辞書からエンコーダを取得
+    if encoder:
+        known_labels = list(encoder.classes_)
+        new_df[col + '_enc'] = new_df[col].apply(lambda x: encoder.transform([x])[0] if x in known_labels else -1)
+
+# 3. 数値列を、数値型に変換
+for col in numeric_cols:
+    new_df[col] = pd.to_numeric(new_df[col], errors='coerce')
+
+# 4. NaNを処理（学習時と同じ方法で）
+#    ここでは0で埋める例。学習時に平均値で埋めたなら、その方法に合わせる。
+new_df = new_df.fillna(0)
+
+# 5. 学習時と「全く同じ」特徴量リストを作成
+feature_columns = [col + "_enc" for col in categorical_cols] + numeric_cols
 X_pred = new_df[feature_columns]
 pred_proba = model.predict_proba(X_pred)[:, 1]
 # 3. 予測結果を元のDataFrameに追加

@@ -11,13 +11,13 @@ import numpy as np
 
 # --- 1. 初期設定 ---
 # 開催日を指定
-kaisai_date = "20250629"
+kaisai_date = "20250705"
 # その日のレース一覧ページURL
 race_list_url = f"https://race.netkeiba.com/top/race_list.html?kaisai_date={kaisai_date}"
 # 保存先フォルダ
 output_dir = 'Datacsv'
 # 保存ファイル名
-output_file = f'Race_database_{kaisai_date}.csv'
+output_file = f'Race_database_{kaisai_date}.parquet'
 
 # Seleniumを効率化するための設定
 options = webdriver.ChromeOptions()
@@ -80,7 +80,7 @@ try:
 
             # --- レース結果テーブルの抽出 ---
             table = soup.find("table", class_="RaceTable01")
-            columns = ["着順","枠番","馬番","馬名","性齢","斤量","騎手","タイム","着差","人気","単勝オッズ","後3F","コーナー通過順","厩舎","馬体重(増減)"]
+            columns = ["着順","枠番","馬番","馬名","年齢","斤量","騎手","タイム","着差","人気","単勝オッズ","後3F","コーナー通過順","厩舎","馬体重(増減)"]
             
             race_data_dict_list = []
             # ヘッダー行(tr)を除外するために[1:]でスライス
@@ -116,7 +116,7 @@ if all_race_df_list:
         os.makedirs(output_dir)
 
     full_path = os.path.join(output_dir, output_file)
-    master_df.to_csv(full_path, index=False, encoding='utf-8-sig')
+    master_df.to_parquet(full_path, index=False)
 
     print("-" * 50)
     print(f"全レースのデータベースが完成しました！")
