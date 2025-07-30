@@ -8,10 +8,23 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import numpy as np
+import requests
+
+def get_horse_status(horse_url):
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}
+    response = requests.get(horse_url,headers=headers)
+    response.encoding = 'EUC-JP'
+    html_text = response.text
+    soup = BeautifulSoup(html_text,"html.parser")
+    
+
+
 
 # --- 1. 初期設定 ---
 # 開催日を指定
-kaisai_date = "20250705"
+kaisai_date = "20250706"
 # その日のレース一覧ページURL
 race_list_url = f"https://race.netkeiba.com/top/race_list.html?kaisai_date={kaisai_date}"
 # 保存先フォルダ
@@ -78,6 +91,7 @@ try:
             track_match = re.search(r"馬場\s*:\s*(\S+)", race_info_text)
             track_condition = track_match.group(1) if track_match else None
 
+
             # --- レース結果テーブルの抽出 ---
             table = soup.find("table", class_="RaceTable01")
             columns = ["着順","枠番","馬番","馬名","年齢","斤量","騎手","タイム","着差","人気","単勝オッズ","後3F","コーナー通過順","厩舎","馬体重(増減)"]
@@ -85,9 +99,29 @@ try:
             race_data_dict_list = []
             # ヘッダー行(tr)を除外するために[1:]でスライス
             for row in table.find_all("tr")[1:]:
-                row_data = [cell.text.strip() for cell in row.find_all("td")]
-                if len(row_data) == len(columns):
-                    race_data_dict_list.append(dict(zip(columns, row_data)))
+                    row_data = [] # 馬一頭分のデータを格納する空のリスト
+                    horse_url = None # 馬のURLを格納する変数を初期化
+                    # enumerateを使って、セルのインデックス番号(i)と中身(cell)を同時に取得
+                    for i, cell in enumerate(row.find_all("td")):
+                        # もし、4番目(インデックス3)のセル、つまり馬名のセルだったら
+                        if i == 3:
+                            # <a>タグを探し、href属性を取得する
+                            link_tag = cell.find('a')
+                            if link_tag:
+                                horse_url = link_tag['href']
+                                # 馬名のテキストも取得しておく
+                                row_data.append(cell.text.strip())
+                        else:
+                            # 馬名以外のセルは、通常通りテキストだけを取得
+                            row_data.append(cell.text.strip())
+                    # ループが終わった後、データが完全かチェック
+                    if len(row_data) == len(columns):
+                        # 辞書を作成
+                        horse_dict = dict(zip(columns, row_data))
+                        # 取得した馬のURLも辞書に追加
+                        horse_dict['馬URL'] = horse_url
+                        # 最終的なリストに辞書を追加
+                        race_data_dict_list.append(horse_dict)  
 
             if race_data_dict_list:
                 race_df = pd.DataFrame(race_data_dict_list)
