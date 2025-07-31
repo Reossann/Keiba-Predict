@@ -18,6 +18,10 @@ def get_horse_status(horse_url):
     response.encoding = 'EUC-JP'
     html_text = response.text
     soup = BeautifulSoup(html_text,"html.parser")
+    table = soup.find("table",class_="db_h_race_results nk_tb_common")
+    tbody = table.find("tbody")
+    for _ in range(3):
+        tr = tbody.find("tr")
     
 
 
