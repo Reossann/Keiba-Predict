@@ -20,8 +20,15 @@ def get_horse_status(horse_url):
     soup = BeautifulSoup(html_text,"html.parser")
     table = soup.find("table",class_="db_h_race_results nk_tb_common")
     tbody = table.find("tbody")
+    row_data = []
     for _ in range(3):
-        tr = tbody.find("tr")
+        tr = tbody.find("tr") 
+        for td in tr.find_all("td"):
+            row_data.append(td.text.strip())
+          
+
+
+
     
 
 
