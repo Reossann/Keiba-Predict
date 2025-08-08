@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import japanize_matplotlib # 日本語表示のためのライブラリ
 import joblib
 import glob
+import numpy as np
 
 # 1. 保存したデータベースを読み込む
 # この一行で、これまでの苦労の成果を瞬時に呼び出せる
@@ -28,11 +29,15 @@ for file in all_files:
     elif file.endswith('.parquet'):
         df_list.append(pd.read_parquet(file))
 df = pd.concat(df_list, ignore_index=True)
+df['着順'] = pd.to_numeric(df['着順'], errors='coerce')
+df.dropna(subset=['着順'], inplace=True) # 着順がない行（中止など）は削除
+df['is_top3'] = np.where(df['着順'] <= 3, 1, 0)
+
 encoders={}
 # 2. エンコーディング処理を行う
 # (ここに前回のヒントであるLabelEncoderのコードが入る)
 # 1. カテゴリとしてエンコードしたい列
-categorical_cols = ['騎手', '馬名', '厩舎', '年齢', '天候', '馬場', '種類']
+categorical_cols = ['騎手', '馬名', '厩舎', '性齢', '天候', '馬場', '種類']
 for col in categorical_cols:
     le = LabelEncoder()
     # NaNを'unknown'などの文字列で埋めてからエンコードすると、より安定します
@@ -42,7 +47,7 @@ for col in categorical_cols:
 
 # 2. 数値として扱いたい列
 #    (馬体重から増減を抜き出すなど、より高度な処理も可能)
-numeric_cols = ['斤量', '距離']
+numeric_cols = ['斤量', '距離','過去3走平均着順', '過去3走平均上り', '過去3走平均人気', '過去3走平均オッズ', '過去3走平均タイム']
 for col in numeric_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
@@ -80,5 +85,5 @@ print(f"正解率 (Accuracy): {accuracy:.4f}")
 print(f"ROC-AUCスコア: {roc_auc:.4f}")
 
 # 特徴量の重要度をプロットする
-lgb.plot_importance(model, figsize=(12, 8))
+lgb.plot_importance(model, figsize=(12, 10))
 plt.show()
