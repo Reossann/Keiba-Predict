@@ -10,7 +10,7 @@ import glob
 
 # 1. 保存したデータベースを読み込む
 # この一行で、これまでの苦労の成果を瞬時に呼び出せる
-path_dir = 'Datacsv'
+path_dir = 'Database'
 # 1. CSVファイルのパスリストを取得
 csv_files = glob.glob(f'{path_dir}/*.csv')
 

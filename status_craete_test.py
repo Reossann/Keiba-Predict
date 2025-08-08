@@ -27,7 +27,7 @@ def get_horse_past_results(horse_url, driver):
     """馬のURLと共有driverを受け取り、過去3走の成績をDataFrameとして返す関数"""
     try:
         driver.get(horse_url)
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 4).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.db_h_race_results"))
         )
         html = driver.page_source
@@ -116,7 +116,7 @@ try:
         try:
             print(f"処理中: {url}")
             driver.get(url)
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, "RaceTable01")))
+            WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.CLASS_NAME, "RaceTable01")))
             html = driver.page_source
             soup = BeautifulSoup(html, 'html.parser')
             
@@ -130,7 +130,7 @@ try:
             track_condition = track_match.group(1) if track_match else None
             
             table = soup.find("table", class_="RaceTable01")
-            columns = ["着順","枠番","馬番","馬名","性齢","斤量","騎手","タイム","着差","人気","単勝オッズ","後3F","コーナー通過順","厩舎","馬体重(増減)"]
+            columns = ["着順","枠番","馬番","馬名","性齢","斤量","騎手","タイム","着差","人気","オッズ","後3F","コーナー通過順","厩舎","馬体重(増減)"]
             
             for row in table.find_all("tr")[1:]:
                 cells = row.find_all("td")
@@ -161,18 +161,18 @@ if all_races_data and all_past_results_data:
     main_df = pd.DataFrame(all_races_data)
     past_df = pd.concat(all_past_results_data, ignore_index=True)
 
-    numeric_cols = ['着順', '上り', '人気', '単勝オッズ', 'タイム']
+    numeric_cols = ['着順', '上り', '人気', 'オッズ', 'タイム']
     for col in numeric_cols:
         past_df[col] = pd.to_numeric(past_df[col], errors='coerce')
     past_df['タイム(秒)'] = past_df['タイム'].apply(time_to_seconds)
     past_df_cleaned = past_df.dropna(subset=numeric_cols + ['タイム(秒)'])
 
     last_3_races = past_df_cleaned.groupby('馬名').head(3)
-    agg_dict = {'着順': 'mean', '上り': 'mean', '人気': 'mean', '単勝オッズ': 'mean', 'タイム(秒)': 'mean'}
+    agg_dict = {'着順': 'mean', '上り': 'mean', '人気': 'mean', 'オッズ': 'mean', 'タイム(秒)': 'mean'}
     past_features = last_3_races.groupby('馬名').agg(agg_dict).reset_index()
     past_features = past_features.rename(columns={
         '着順': '過去3走平均着順', '上り': '過去3走平均上り', '人気': '過去3走平均人気',
-        '単勝オッズ': '過去3走平均オッズ', 'タイム(秒)': '過去3走平均タイム'
+        'オッズ': '過去3走平均オッズ', 'タイム(秒)': '過去3走平均タイム'
     })
 
     final_df = pd.merge(main_df, past_features, on='馬名', how='left')
