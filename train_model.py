@@ -8,15 +8,17 @@ import japanize_matplotlib # 日本語表示のためのライブラリ
 import joblib
 import glob
 import numpy as np
+from pathlib import Path
 
 # 1. 保存したデータベースを読み込む
 # この一行で、これまでの苦労の成果を瞬時に呼び出せる
-path_dir = 'Database'
+PROJECT_ROOT = Path(__file__).resolve().parent
+path_dir = PROJECT_ROOT / 'Database'
 # 1. CSVファイルのパスリストを取得
-csv_files = glob.glob(f'{path_dir}/*.csv')
+csv_files = glob.glob(str(path_dir / '*.csv'))
 
 # 2. Parquetファイルのパスリストを取得
-parquet_files = glob.glob(f'{path_dir}/*.parquet')
+parquet_files = glob.glob(str(path_dir / '*.parquet'))
 
 # 3. 2つのリストを結合
 all_files = csv_files + parquet_files
@@ -67,6 +69,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 model = lgb.LGBMClassifier()
 model.fit(X_train, y_train)
 joblib.dump(model, 'lgbm_model.joblib')
+joblib.dump(encoders, 'encoders.joblib')
 
 print("モデルの学習が完了しました！")
 

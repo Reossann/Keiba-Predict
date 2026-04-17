@@ -5,9 +5,12 @@ from bs4 import BeautifulSoup
 import time
 import re
 import numpy as np
+from pathlib import Path
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 # --- ヘルパー関数の定義 (データ収集時と全く同じもの) ---
 def time_to_seconds(time_str):
@@ -52,8 +55,8 @@ def get_horse_past_results(horse_url, driver):
 # --- 1. モデルとエンコーダの読み込み ---
 print("学習済みモデルとエンコーダを読み込んでいます...")
 try:
-    encoders = joblib.load('encoders.joblib')
-    model = joblib.load('lgbm_model.joblib')
+    encoders = joblib.load(PROJECT_ROOT / 'encoders.joblib')
+    model = joblib.load(PROJECT_ROOT / 'lgbm_model.joblib')
     print("読み込み完了。")
 except FileNotFoundError:
     print("エラー: 'encoders.joblib' または 'lgbm_model.joblib' が見つかりません。")
